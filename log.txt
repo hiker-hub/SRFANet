@@ -1,0 +1,91 @@
+
+[Model Configuration]
+  Rotated Conv Kernel Size: 3
+  Block Number: 2
+  Number of Classes: 701
+
+===========building convnext===========
+using model_type: convnext_base.fb_in22k_ft_in1k_384 as a backbone
+https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_1k_224.pth
+
+======================================================================
+RAD
+the size of conv_kernel: 3x3
+the number of Block: 2
+======================================================================
+
+
+
+Using FAF module for domain alignment
+
+Model: handcraft convnext-base with FAF + Feature Alignment Loss
+
+Loss weight:
+  weight_infonce: 1.0
+  weight_cls: 0.0
+  weight_dsa: 0.82
+  weight_feature_align: 1.72
+
+{'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}
+GPUs available: 1
+
+Image Size Query: (384, 384)
+Image Size Ground: (384, 384)
+Mean: [0.485, 0.456, 0.406]
+Std:  [0.229, 0.224, 0.225]
+
+Query Images Test: 37855
+Gallery Images Test: 951
+
+------------------------------[Loss Functions]------------------------------
+
+======================================================================
+FAF Loss Configuration:
+  Type: Statistical Alignment + Feature Matching
+    lambda_match: 0.9
+    lambda_stat: 0.0
+======================================================================
+
+
+======================================================================
+SRO Loss confer - Query vs Reference:
+  weight of FAF: 0.32
+  weigh of cls: 0.0
+  weight of ConvNeXt: 0.38
+  Epsilon (avoid NaN): 1e-08
+======================================================================
+
+ Loss functions initialized successfully
+  - InfoNCE
+  - Triplet Loss (margin=0.3)
+  - Block InfoNCE
+  - FAF Loss (Statistical Alignment + Feature Matching)
+  - Feature Alignment Loss
+Mixed Precision: True
+
+
+Scheduler: cosine - max LR: 0.001
+Warmup Epochs: 0.1 - Warmup Steps: 157.8
+Train Epochs:  1 - Train Steps:  1578
+
+Shuffle Dataset:
+Original Length: 37854 - Length after Shuffle: 37848
+Break Counter: 0
+Pairs left out of last batch to avoid creating noise: 6
+First Element ID: 1094 - Last Element ID: 1607
+
+------------------------------[Main Training]------------------------------
+
+------------------------------[Epoch: 1]------------------------------
+Epoch: 1, Train Loss = 0.743, Lr = 0.000000
+
+------------------------------[Evaluate]------------------------------
+Extract Features (Original):
+Compute Scores:
+Recall@1: 95.3507 - Recall@5: 98.6554 - Recall@10: 98.9750 - Recall@top1: 99.0041 - AP: 96.1028
+
+Shuffle Dataset:
+Original Length: 37854 - Length after Shuffle: 37848
+Break Counter: 0
+Pairs left out of last batch to avoid creating noise: 6
+First Element ID: 0945 - Last Element ID: 1020
