@@ -58,7 +58,7 @@ class Configuration:
         parser.add_argument('--ckpt_path',
                             default='checkpoints/sues-200/convnext_base.fb_in22k_ft_in1k_384/0704112405/weights_e1_0.9690.pth',
                             type=str, help='path to pretrained checkpoint file')
-        parser.add_argument('--nclasses', default=200, type=int, help='sues-200数据集的场景类别数')
+        parser.add_argument('--nclasses', default=200, type=int, help='Number of scene categories for the sues-200 dataset')
         parser.add_argument('--block', default=2, type=int)
         parser.add_argument('--triplet_loss', default=0.3, type=float)
         parser.add_argument('--resnet', default=False, type=bool)
@@ -271,7 +271,7 @@ if __name__ == '__main__':
     else:
         scaler = None
 
-    print(f"✓ Loss functions initialized successfully")
+    print(f"   Loss functions initialized successfully")
     print(f"  - InfoNCE")
     print(f"  - Triplet Loss (margin={config.triplet_loss})")
     print(f"  - Block InfoNCE")
