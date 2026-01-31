@@ -210,18 +210,17 @@ class build_convnext(nn.Module):
             'standard': 'Standard convolution',
             'bottleneck': 'Bottleneck convolution',
             'depthwise': 'Depthwise separable convolution',
-            'multiscale': '多尺度Inception卷积',
-            'dilated': '空洞卷积（大感受野）'
+            'multiscale': 'Multi-scale Inception convolution',
+            'dilated': 'Dilated convolution'
         }
         
         print(f"\n{'=' * 70}")
-        print(f"✓ 使用改进的卷积模块")
-        print(f"  类型: {conv_type_names.get(conv_type, conv_type)}")
-        print(f"  卷积核大小: {rotated_conv_kernel_size}x{rotated_conv_kernel_size}")
-        print(f"  Block数量: {block}")
+        print(f"  improved convolution module")
+        print(f"  Types: {conv_type_names.get(conv_type, conv_type)}")
+        print(f"  Kernel size: {rotated_conv_kernel_size}x{rotated_conv_kernel_size}")
+        print(f"  Number of blocks: {block}")
         print(f"{'=' * 70}\n")
 
-        # 创建卷积层，支持多种类型
         self.rot_conv_layer = RotatedConvBlock(
             in_channels=self.in_planes,
             kernel_size=rotated_conv_kernel_size,
@@ -232,7 +231,6 @@ class build_convnext(nn.Module):
             name = 'classifier_mcb' + str(i + 1)
             setattr(self, name, ClassBlock(self.in_planes, num_classes, 0.5, return_f=self.return_f))
 
-        # 固定使用FAF模块
         in_channels = 1024
         hid_channels = 2048
         out_channels = 256
@@ -251,56 +249,32 @@ class build_convnext(nn.Module):
         self.num_heads = 8
 
     def forward(self, x):
-        # backbone feature extractor
         gap_feature, part_features = self.convnext(x)
-
-        # Training
         if self.training:
-            # 1. FAF Domain Alignment Module
             pfeat_align = self.FAF_module(part_features)
-
-            # 2. 改进的卷积模块
             enhanced_features = self.rot_conv_layer(part_features)
-            # 为了匹配TripletAttention的接口,返回两次
             tri_features = (enhanced_features, enhanced_features)
-
             convnext_feature = self.classifier1(gap_feature)
-
-            # 提取block特征
             tri_list = []
             for i in range(self.block):
-                # 使用第一个特征图（两个是相同的）
                 tri_list.append(tri_features[i % 2].mean([-2, -1]))
-
             triatten_features = torch.stack(tri_list, dim=2)
-
             if self.block == 0:
                 y = []
             else:
                 y = self.part_classifier(self.block, triatten_features, cls_name='classifier_mcb')
-
             y = y + [convnext_feature]
-
-            # 修改: 获取分类器的中间特征 (bottleneck特征)
-            # 这个特征在训练时用于新的特征对齐loss
             classifier_feature_main = self.classifier1.add_block(gap_feature)
-            
-            # 重要: 无论return_f是True还是False，训练时都返回6个值
             if self.return_f:
                 cls, features = [], []
                 for i in y:
                     cls.append(i[0])
                     features.append(i[1])
-                # 返回6个值
                 return pfeat_align, cls, features, gap_feature, part_features, classifier_feature_main
             else:
-                # return_f为False时，也要返回6个值，但cls和features为None
-                cls = [item for item in y]  # 此时y中每个元素只是分类输出，不是tuple
-                features = None  # 没有中间特征
-                # 返回6个值
+                cls = [item for item in y]  
+                features = None 
                 return pfeat_align, cls, features, gap_feature, part_features, classifier_feature_main
-
-        # Eval
         else:
             return gap_feature, part_features
 
@@ -319,7 +293,6 @@ class build_convnext(nn.Module):
             return torch.stack(y, dim=2)
         return y
 
-
 def make_convnext_model(num_class, block=4, return_f=False, resnet=False,
                         rotated_conv_kernel_size=3, conv_type='bottleneck'):
     print('===========building convnext===========')
@@ -334,11 +307,7 @@ def make_convnext_model(num_class, block=4, return_f=False, resnet=False,
     )
     return model
 
-
 def make_model(config):
-    """创建模型 - 支持多种卷积类型"""
-    
-    # 获取卷积类型（如果config中没有，默认使用bottleneck）
     conv_type = getattr(config, 'conv_type', 'bottleneck')
     
     print(f"\n[Model Configuration]")
